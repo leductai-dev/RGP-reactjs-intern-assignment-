@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>LE DUC TAI - DEV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" type="image/png"
+        href="https://scontent.fhan14-2.fna.fbcdn.net/v/t1.6435-1/p100x100/135015636_975381832987070_8205200608264161896_n.jpg?_nc_cat=102&ccb=1-3&_nc_sid=7206a8&_nc_ohc=Bhlpv6A-ZbEAX_tx_Vf&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent.fhan14-2.fna&oh=881933a2634c6905782871a64208aa1b&oe=61224FC5" />
+    <link rel="icon" type="image/png"
+        href="https://scontent.fhan14-2.fna.fbcdn.net/v/t1.6435-1/p100x100/135015636_975381832987070_8205200608264161896_n.jpg?_nc_cat=102&ccb=1-3&_nc_sid=7206a8&_nc_ohc=Bhlpv6A-ZbEAX_tx_Vf&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent.fhan14-2.fna&oh=881933a2634c6905782871a64208aa1b&oe=61224FC5" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui;
+        }
+
+        #myCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 700px;
+            height: 80vh;
+            border: 3px solid black;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .game {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-body {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            flex-grow: 1;
+            border: 2px solid black;
+            margin-top: 10px;
+        }
+
+        .game-info {
+            margin-top: 10px;
+            display: flex;
+        }
+
+        .game-info>span {
+            margin-right: 40px;
+        }
+
+        .btn-reset {
+            outline: none;
+            cursor: pointer;
+            padding: 2px 5px;
+            margin-top: 15px;
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game">
+        <div class="game-container">
+            <div class="game-header">
+                <h2 class="game-status">
+                    LET'S PLAY
+                </h2>
+                <div class="game-info">
+                    <span>Points</span>
+                    <input value="5" type="text" id="game-points">
+                </div>
+                <div class="game-info">
+                    <span>Times</span>
+                    <span id="timer">5</span>
+
+                </div>
+                <button class="btn-reset">Restart</button>
+            </div>
+            <div class="game-body">
+                <canvas id="myCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.querySelector('#myCanvas');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const ctx = canvas.getContext('2d');
+
+        class Points {
+            constructor(value, opacity) {
+                this.radius = 20;
+                this.x = this.radius + Math.round(Math.random() * (canvas.width - this.radius * 2));
+                this.y = this.radius + Math.round(Math.random() * (canvas.height - this.radius * 2));
+                this.value = value;
+                this.color = 'white';
+                this.opacity = opacity || 1;
+            }
+            setColor(color) {
+                this.color = color;
+            }
+            setOpacity(opacity) {
+                this.opacity = opacity;
+            }
+            isClicked(mouseX, mouseY) {
+                const distance = Math.sqrt(Math.pow(mouseX - this.x, 2) + Math.pow(mouseY - this.y, 2));
+                if (distance <= this.radius) return true;
+            }
+            draw() {
+                ctx.globalAlpha = this.opacity;
+                ctx.strokeStyle = 'black';
+                ctx.fillStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fill();
+                ctx.stroke();
+                ctx.closePath();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '18px Arial';
+                ctx.fillStyle = 'black';
+                ctx.fillText(this.value, this.x, this.y);
+            };
+        }
+
+
+        window.onload = function () {
+            function createPointList(totalPoints) {
+                points = [];
+                for (let i = 0; i < totalPoints; i++) {
+                    points.push(new Points(i + 1))
+                }
+            }
+
+            function renderPoints() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = points.length - 1; i >= 0; i--) {
+                    points[i].draw();
+                }
+            }
+
+            function setGameStatus(gameStatus) {
+                const statusElement = document.querySelector('.game-status');
+                statusElement.style.color = gameStatus.color;
+                statusElement.innerText = gameStatus.state;
+                canvas.removeEventListener('click', handleCheckPoint);
+            }
+
+            function calcTime() {
+                const timer = document.getElementById('timer');
+                if (interval) clearInterval(interval);
+                let time = 0;
+                interval = setInterval(() => {
+                    time += 0.1;
+                    timer.innerText = time.toFixed(1) + 's';
+                }, 100)
+            }
+
+            function handleResetGame() {
+                const inpPointsCount = document.getElementById('game-points').value;
+                calcTime();
+                createPointList(inpPointsCount)
+                setGameStatus(gameStatus.init)
+                renderPoints();
+                canvas.addEventListener('click', handleCheckPoint);
+            }
+
+            function animateColorTransition() {
+                function step() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    renderPoints();
+                    for (let i = 0; i < removedPoints.length; i++) {
+                        const point = removedPoints[i];
+                        if (point.opacity > 0.2) {
+                            point.setOpacity(point.opacity - 0.025);
+
+                            point.draw();
+                        } else {
+                            removedPoints.shift();
+                        }
+                    }
+                    requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
+            }
+
+            function handleCheckPoint(event) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+                const correctPoint = points[0];
+                if (correctPoint && correctPoint.isClicked(mouseX, mouseY)) {
+                    correctPoint.setColor('red');
+                    removedPoints.push(correctPoint)
+                    points.shift();
+                    if (points.length == 0) {
+                        clearInterval(interval);
+                        setGameStatus(gameStatus.win);
+                    };
+                } else {
+                    for (let i = 0; i < points.length; i++) {
+                        if (points[i].isClicked(mouseX, mouseY)) {
+                            setGameStatus(gameStatus.lose);
+                            clearInterval(interval);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const gameStatus = {
+                win: {
+                    color: 'green',
+                    state: 'ALL CLEARED'
+                },
+                lose: {
+                    color: 'red',
+                    state: 'GAME OVER'
+                },
+                init: {
+                    color: 'black',
+                    state: `LET'S PLAY`
+                }
+
+            }
+
+            let points = [];
+            const removedPoints = [];
+            let interval = null;
+            const btnReset = document.querySelector('.btn-reset');
+            btnReset.addEventListener('click', handleResetGame)
+            canvas.addEventListener('click', handleCheckPoint);
+            createPointList(5)
+            renderPoints();
+            calcTime();
+            animateColorTransition()
+        };
+    </script>
+
+</body>
+
+</html>
